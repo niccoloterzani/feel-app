@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1D2923">
+<title>FEEL · Trust how you feel</title>
+<meta name="description" content="Prototipo dell'app FEEL, la fascia sportiva che registra il corpo ma non mostra numeri né punteggi. Trust how you feel.">
+<meta property="og:title" content="FEEL · Trust how you feel">
+<meta property="og:description" content="La fascia che registra il tuo corpo e ti parla a parole. Niente numeri, niente punteggi.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FEEL">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* FEEL: forest stage, paper app; sage, mist, sand and clay are the four body states. Layout: phone on the stage, presenter notes beside it. */
+  --forest:#1D2923; --forest-2:#27352E; --paper:#F4F3EF; --card:#FFFFFF; --ink:#1B2620; --muted:#59625C; --line:#E2E2DC; --fill:#EBEBE6;
+  --sage:#4E6B5A; --mist:#8FA89A; --sand:#BFA57A; --clay:#B85A34; --pale:#C9D6CD;
+  --display:"Sora","Segoe UI",system-ui,sans-serif; --body:"Inter","Segoe UI",system-ui,sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--forest);font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--sage);outline-offset:3px;border-radius:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- stage (desktop) ---------- */
+.stage{height:100%;display:grid;grid-template-columns:minmax(280px,400px) auto;gap:72px;align-items:center;justify-content:center;padding:24px 32px}
+.side{color:var(--paper);display:flex;flex-direction:column;gap:28px;max-height:100%;overflow:auto;padding-right:6px}
+.side .mark{font-family:var(--display);font-weight:700;font-size:72px;letter-spacing:-.04em;line-height:.9;margin:0}
+.side .tag{font-family:var(--display);font-weight:300;font-size:22px;color:var(--mist);margin:6px 0 0}
+.side p{margin:0;font-size:14px;line-height:1.55;color:#C9D3CC}
+.side h2{font:600 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--sand);margin:0 0 12px}
+.side .grp{display:flex;flex-wrap:wrap;gap:8px}
+.sbtn{border:1px solid #3B4B42;color:var(--paper);border-radius:999px;padding:9px 14px;font-size:13px;display:inline-flex;align-items:center;gap:8px;transition:background .2s,border-color .2s}
+.sbtn:hover{background:var(--forest-2);border-color:#56685D}
+.sbtn[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.sbtn .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.note{border:1px solid #3B4B42;border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.note .concept{font-family:var(--display);font-size:17px;color:var(--paper);line-height:1.3}
+.note .say{font-size:14px;color:#C9D3CC;line-height:1.55}
+.note .say::before{content:"Cosa dire  ";color:var(--sand);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+
+.phone-wrap{position:relative;width:calc(390px * var(--k,1) + 24px * var(--k,1));height:calc(844px * var(--k,1) + 24px * var(--k,1))}
+.phone{position:absolute;top:0;left:0;width:414px;height:868px;transform:scale(var(--k,1));transform-origin:0 0;border-radius:62px;background:#0F1612;padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.35),inset 0 0 0 1.5px #3A4740}
+.app{position:relative;width:390px;height:844px;border-radius:50px;overflow:hidden;background:var(--paper);isolation:isolate}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:33px;border-radius:20px;background:#0F1612;z-index:50;pointer-events:none}
+
+@media (max-width: 860px){
+  body{background:var(--paper)}
+  .stage{display:block;padding:0}
+  .side{display:none}
+  .phone-wrap{width:100%;height:100%}
+  .phone{position:static;width:100%;height:100%;transform:none;border-radius:0;padding:0;box-shadow:none;background:var(--paper)}
+  .app{width:100%;height:100%;border-radius:0}
+  .notch{display:none}
+}
+
+/* ---------- app chrome ---------- */
+#main{position:absolute;inset:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;justify-content:space-between;padding:calc(54px + env(safe-area-inset-top,0px)) 24px 6px}
+@media (max-width:860px){.top{padding-top:calc(18px + env(safe-area-inset-top,0px))}}
+.wm{font:600 12px/1 var(--display);letter-spacing:.32em}
+.band{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.band i{width:8px;height:8px;border-radius:50%;background:var(--c,#B9BDB9)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 24px 120px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.tabs{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:rgba(235,235,230,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:999px;display:flex;padding:5px;z-index:10}
+.tabs button{flex:1;height:42px;border-radius:999px;font-size:13px;color:var(--muted);transition:background .25s,color .25s}
+.tabs button[aria-current="page"]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 2px 8px rgba(27,38,32,.08)}
+
+/* ---------- type ---------- */
+.eyebrow{font:600 11px/1.2 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+.date{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.12;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.big{font-family:var(--display);font-weight:600;font-size:50px;line-height:1;letter-spacing:-.04em;margin:0}
+.lead{font-size:15px;line-height:1.5;color:var(--muted);margin:0}
+.p{font-size:15px;line-height:1.55;margin:0}
+.small{font-size:13px;line-height:1.5}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.sec{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between{justify-content:space-between}
+
+/* ---------- components ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px 18px}
+.card.tap{display:flex;align-items:center;gap:14px;text-align:left;width:100%;transition:transform .15s}
+.card.tap:active{transform:scale(.985)}
+.card .t{font-family:var(--display);font-size:16px;font-weight:500;margin:0}
+.card .s{font-size:13px;color:var(--muted);margin:2px 0 0;line-height:1.45}
+.arrow{margin-left:auto;color:var(--muted);flex:none}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{width:100%;text-align:left;background:var(--fill);border-radius:18px;padding:17px 18px;font-size:15px;transition:background .2s,color .2s,transform .15s}
+.opt:hover{background:#E2E3DD}
+.opt:active{transform:scale(.985)}
+.opt[aria-pressed="true"]{background:var(--sage);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--fill);border-radius:999px;padding:7px 12px;font-size:13px}
+.chip.state{background:var(--card);border:1px solid var(--line)}
+.chip.state::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.toggle{background:var(--fill);border-radius:999px;padding:9px 14px;font-size:13px}
+.toggle[aria-pressed="true"]{background:var(--forest);color:var(--paper)}
+.link{color:var(--sage);font-weight:600;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.btn{height:54px;border-radius:999px;background:var(--forest);color:var(--paper);font-weight:600;font-size:15px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .2s,transform .15s}
+.btn:active{transform:scale(.985)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.light{background:var(--fill);color:var(--ink)}
+.btn.line{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.danger{background:transparent;border:1.5px solid #E7CDBF;color:var(--clay)}
+.switch{position:relative;width:50px;height:30px;border-radius:999px;background:#D3D6D1;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--sage)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+textarea,input[type=text]{width:100%;border:1.5px solid var(--line);background:var(--card);border-radius:16px;padding:14px 16px;font-size:15px;resize:none}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--sage)}
+label.lbl{font-size:13px;color:var(--muted);display:block;margin-bottom:8px}
+
+/* blob canvases */
+canvas[data-blob]{display:block}
+.hero{position:relative;height:250px;margin:6px -24px 4px;display:flex;align-items:center;justify-content:center}
+.hero canvas{width:100%;height:100%}
+.hero .chip{position:absolute;bottom:18px;left:50%;transform:translateX(-50%)}
+.idle{display:flex;align-items:center;gap:14px;margin-top:22px}
+.idle canvas{width:78px;height:78px;flex:none}
+.pebble{width:46px;height:46px;flex:none}
+
+/* sleep */
+.wave{width:100%;height:120px;display:block}
+.wave-l{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.nights{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.nights span{font-size:11px;color:var(--muted);display:block;margin-top:6px}
+.nights svg{width:30px;height:30px}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.week .d{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.week .c{width:28px;height:28px;border-radius:50%;background:var(--c,#DADCD7)}
+.week .r{width:14px;height:3px;border-radius:2px;background:var(--forest)}
+.week .r.no{background:transparent}
+.week .today .c{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+.entry{display:flex;flex-direction:column;gap:4px;padding:14px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:0;padding-top:0}
+.entry .day{font-family:var(--display);font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.entry .day i{width:9px;height:9px;border-radius:50%;background:var(--c,#DADCD7)}
+.entry q{font-style:italic;color:var(--muted);font-size:13px;quotes:"“" "”"}
+
+/* settings list */
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:0;padding-top:4px}
+.li svg{flex:none;margin-top:1px;color:var(--sage)}
+
+/* overlays */
+.ov{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column}
+.ov.dark{background:var(--forest);color:var(--paper)}
+.ov.dark .eyebrow{color:var(--mist)}
+.ov.light{background:var(--paper)}
+.ov .body{flex:1;overflow-y:auto;padding:calc(64px + env(safe-area-inset-top,0px)) 24px 28px;display:flex;flex-direction:column;scrollbar-width:none}
+.ov .body::-webkit-scrollbar{display:none}
+@media (max-width:860px){.ov .body{padding-top:calc(28px + env(safe-area-inset-top,0px))}}
+.ov .foot{padding:12px 24px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.runblob{flex:1;min-height:260px;position:relative}
+.runblob canvas{position:absolute;inset:0;width:100%;height:100%}
+.cue{min-height:72px;font-family:var(--display);font-size:20px;line-height:1.35;letter-spacing:-.01em;transition:opacity .4s;text-wrap:balance}
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sim button{height:48px;border-radius:999px;border:1px solid #3F5047;color:var(--paper);font-size:14px}
+.sim button:active{background:var(--forest-2)}
+.simlbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);text-align:center}
+.btn.onDark{background:var(--paper);color:var(--ink)}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:6px;height:6px;border-radius:50%;background:#C5CAC4}
+.dots i.on{background:var(--ink);width:18px;border-radius:3px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare .card{padding:14px 16px}
+.compare .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.compare .v{font-family:var(--display);font-size:18px;margin-top:6px;text-transform:capitalize}
+
+/* sheet */
+#layer:empty{display:none}
+.backdrop{position:absolute;inset:0;background:rgba(18,26,22,.45);z-index:40;display:flex;align-items:flex-end;animation:fade .2s ease}
+.sheet{background:var(--paper);width:100%;max-height:88%;overflow:auto;border-radius:30px 30px 0 0;padding:12px 24px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.grab{width:40px;height:5px;border-radius:3px;background:#D3D6D1;margin:0 auto 4px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+table{border-collapse:collapse;font-size:12px;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:11px;position:sticky;top:0;background:var(--card)}
+tr:last-child td{border-bottom:0}
+.share{background:var(--forest);color:var(--paper);border-radius:26px;padding:24px;display:flex;flex-direction:column;gap:14px;min-height:300px;position:relative;overflow:hidden}
+.share .wm{color:var(--mist)}
+.share .q{font-family:var(--display);font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0}
+.share .tg{margin-top:auto;font-family:var(--display);color:var(--sand);font-size:15px}
+.share canvas{position:absolute;right:-56px;bottom:-56px;width:190px;height:190px;opacity:.55}
+.share > :not(canvas){position:relative;z-index:1}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--paper);font-size:13px;padding:11px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* onboarding */
+.ob .big{font-size:64px}
+.ob .pair{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;margin:26px 0 10px}
+.ob .pair canvas{width:180px;height:180px}
+.promise{display:flex;gap:14px;align-items:flex-start}
+.promise b{font-family:var(--display);font-weight:400;color:var(--mist);font-size:15px;min-width:22px}
+.promise .t{font-family:var(--display);font-size:17px;margin:0}
+.promise .s{font-size:13px;color:#C3CDC6;margin:3px 0 0;line-height:1.45}
+
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:.5}}
+.in{animation:rise .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:.0;transform:translateY(10px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="side" aria-label="Pannello per la presentazione">
+    <div>
+      <p class="mark">FEEL</p>
+      <p class="tag">Trust how you feel</p>
+    </div>
+    <p>Prototipo funzionante dell'app della fascia FEEL. Tocca il telefono per usarla: la fascia è simulata, i consigli vengono calcolati dai suoi dati e scritti a parole.</p>
+    <div>
+      <h2>Stanotte la fascia ha sentito</h2>
+      <div class="grp" id="scn"></div>
+    </div>
+    <div>
+      <h2>Vai a</h2>
+      <div class="grp" id="nav"></div>
+    </div>
+    <div class="note" id="note" aria-live="polite"></div>
+    <div class="grp">
+      <button class="sbtn" data-a="reset">Ricomincia la demo</button>
+    </div>
+  </aside>
+  <div class="phone-wrap" id="wrap">
+    <div class="phone">
+      <div class="app" id="app">
+        <div class="notch" aria-hidden="true"></div>
+        <div id="main"></div>
+        <div id="layer"></div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   FEEL · prototipo
+   La fascia registra (dati simulati), l'app parla a parole.
+   ========================================================= */
+
+const TABS = [
+  {k:"oggi", l:"Oggi"}, {k:"sonno", l:"Sonno"}, {k:"corsa", l:"Corsa"}, {k:"diario", l:"Diario"}, {k:"tu", l:"Tu"}
+];
+const GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+const INIZ = ["D","L","M","M","G","V","S"];
+const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+
+const STATES = {
+  riposato:   {label:"Riposato",      color:"#4E6B5A", energy:.65},
+  equilibrio: {label:"In equilibrio", color:"#8FA89A", energy:.45},
+  carico:     {label:"Carico",        color:"#BFA57A", energy:.35},
+  rallentare: {label:"Da rallentare", color:"#B85A34", energy:.2}
+};
+const IDLE_COLOR = "#B9C4BC";
+const FEELS = {energia:"Pieno di energia", normale:"Normale", stanco:"Un po' stanco"};
+const FEELS_LOW = {energia:"pieno di energia", normale:"normale", stanco:"un po' stanco"};
+const PERC = ["Leggera","Giusta","Impegnativa","Durissima"];
+const BAND = ["facile","media","intensa","molto intensa"];
+const ADVWORD = {spingi:"Spingi.", tranquillo:"Vai tranquillo.", riposa:"Riposa."};
+const TARGET = {spingi:.80, tranquillo:.68, riposa:.64};
+const NUMF = ["nessuna","una","due","tre","quattro","cinque","sei","sette","otto"];
+
+const NOTES = {
+  onboarding:{c:"Datificazione e dataismo · van Dijck", s:"FEEL raccoglie gli stessi dati degli altri wearable, ma non li trasforma in un voto: i dati restano, i numeri spariscono."},
+  oggi:{c:"Motivazione intrinseca contro gamification · Deterding", s:"Al posto del recupero da 0 a 100 c'è una domanda: come ti senti? Il consiglio arriva a parole, con il motivo, e tiene conto di cosa hai risposto."},
+  sonno:{c:"Ortosonnia", s:"Un punteggio basso stressa, e lo stress peggiora il sonno. Qui la notte si racconta, non si valuta: trust the mornings."},
+  corsa:{c:"Run by feel · motivazione intrinseca", s:"Durante la corsa niente passo, tempo o battiti. Al massimo una vibrazione e una frase. Con la Blind Run, nemmeno quella."},
+  run:{c:"Correre a sensazione", s:"Lo schermo mostra solo una forma che respira con il tuo ritmo. I due pulsanti in basso simulano il runner che accelera o rallenta."},
+  post:{c:"Prima tu, poi la fascia", s:"Dopo la corsa l'app chiede prima com'è andata secondo te, e solo dopo mostra cosa ha registrato la fascia. Il confronto rinforza la fiducia nelle proprie sensazioni."},
+  diario:{c:"Stile: chi parla di sensazioni racconta", s:"La settimana è un racconto in prima persona, come su #runbyfeel, non il cruscotto tecnico di Whoop e Oura."},
+  tu:{c:"Internet of Things · Bunz & Meikle", s:"Il paradosso di FEEL: raccoglie comunque dati. Ma restano sul telefono, si cancellano dopo 28 giorni e li vedi solo se li cerchi. Niente abbonamento."},
+  share:{c:"#FeelNotNumbers", s:"Ogni corsa si condivide a parole, senza numeri. I contenuti degli utenti con l'hashtag sono una delle misure della campagna."},
+  data:{c:"I dati restano tuoi", s:"I numeri esistono, ma bisogna andarli a cercare. È una scelta consapevole, non la prima cosa che vedi al mattino."}
+};
+
+/* ---------- utils ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function startDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function dkey(d){ const x = new Date(d); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+function fromKey(k){ const [y,m,d] = k.split("-").map(Number); return new Date(y, m-1, d); }
+const todayKey = () => dkey(new Date());
+function dateLong(d){ return GIORNI[d.getDay()] + " " + d.getDate() + " " + MESI[d.getMonth()]; }
+function dayLabel(k){
+  const diff = Math.round((startDay(new Date()) - fromKey(k)) / 864e5);
+  if (diff === 0) return "Oggi";
+  if (diff === 1) return "Ieri";
+  const d = fromKey(k); return cap(GIORNI[d.getDay()]) + " " + d.getDate();
+}
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function vibrate(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
+const runInt = run => { const n = run.series.length, w = n > 6 ? Math.floor(n*.15) : 0; return avg(run.series.slice(w)); };
+const bandLevel = v => v < .70 ? 0 : v < .78 ? 1 : v < .86 ? 2 : 3;
+function plural(n, one, many){ return (NUMF[n] || String(n)) + " " + (n === 1 ? one : many); }
+
+/* ---------- dati simulati della fascia ---------- */
+function rampSeries(int, seed){
+  const out = [];
+  for (let i=0;i<40;i++){
+    const warm = .1 * (1 - Math.min(1, i/6));
+    const wob = Math.sin(i*.9 + seed)*.018 + Math.sin(i*.37 + seed*2)*.022;
+    out.push(+clamp(int - warm + wob + i*.0012, .42, .98).toFixed(3));
+  }
+  return out;
+}
+function mkRun(min, int, perceived, note, seed){
+  return {id: "r"+Math.round(seed*1e6), min, series: rampSeries(int, seed), perceived, note: note || "", chips:{}};
+}
+function genHistory(scn){
+  const r = mulberry(20261130);
+  const t0 = startDay(new Date());
+  const notes = ["Gambe leggere, testa libera.","Corsa al parco con il sole basso.","Partito piano, finito bene.","Respiro corto all'inizio, poi è andata.","Ho corso con un'amica, abbiamo parlato tutto il tempo.","Pioggia leggera, mi è piaciuta."];
+  const days = [];
+  for (let d=27; d>=0; d--){
+    const date = addDays(t0, -d);
+    const day = {
+      key: dkey(date),
+      sleepH: +(7.2 + (r()-.5)*1.1).toFixed(2),
+      wakes: Math.floor(r()*2.4),
+      rhr: Math.round(52 + (r()-.5)*4),
+      hrv: Math.round(62 + (r()-.5)*12),
+      feel: null, woke: null, runs: []
+    };
+    if (d > 0){
+      const x = r(); day.feel = x < .3 ? "energia" : x < .82 ? "normale" : "stanco";
+      if (d % 2 === 1 || r() < .15){
+        const int = .62 + r()*.2, min = Math.round(25 + r()*35);
+        const bl = bandLevel(int);
+        const p = clamp(bl + (r() < .25 ? (r() < .5 ? -1 : 1) : 0), 0, 3);
+        day.runs.push(mkRun(min, int, p, r() < .35 ? notes[Math.floor(r()*notes.length)] : "", r()));
+      }
+    }
+    days.push(day);
+  }
+  applyScenario(days, scn);
+  return days;
+}
+function baseOf(days, i){
+  const past = days.slice(Math.max(0, i-14), i).filter(d => d.sleepH != null);
+  if (past.length < 3) return null;
+  return {s: avg(past.map(d=>d.sleepH)), r: avg(past.map(d=>d.rhr)), h: avg(past.map(d=>d.hrv))};
+}
+function applyScenario(days, scn){
+  const n = days.length; if (n < 5) return;
+  const T = days[n-1], d1 = days[n-2], d2 = days[n-3], d3 = days[n-4];
+  const b = baseOf(days, n-1);
+  const set = o => { T.sleepH = +(b.s + o.s).toFixed(2); T.wakes = o.w; T.rhr = Math.round(b.r + o.r); T.hrv = Math.round(b.h + o.h); };
+  const R = (min,int,p,note,seed) => mkRun(min,int,p,note,seed);
+  switch (scn){
+    case "riposato":  set({s:.9, w:0, r:-3, h:10});  d1.runs=[]; d2.runs=[R(30,.66,0,"",.21)]; d3.runs=[]; break;
+    case "carico":    set({s:-.3, w:1, r:2, h:-7});  d1.runs=[R(55,.85,2,"Ripetute in pista, alla fine non ne avevo più.",.31)]; d2.runs=[R(50,.83,2,"",.42)]; d3.runs=[R(45,.80,2,"",.53)]; break;
+    case "rallentare":set({s:-1.8, w:4, r:6, h:-16}); d1.runs=[R(62,.88,3,"Lungo lunghissimo, tanta fatica.",.64)]; d2.runs=[]; d3.runs=[R(40,.79,2,"",.75)]; break;
+    default:          set({s:0, w:1, r:0, h:0});     d1.runs=[]; d2.runs=[R(35,.70,1,"Partito piano, finito bene.",.86)]; d3.runs=[];
+  }
+  T.runs = []; T.feel = null; T.woke = null;
+}
+
+/* ---------- il motore: dai dati alle parole ---------- */
+function bodyState(days, i){
+  const d = days[i]; if (!d || d.sleepH == null) return null;
+  const b = baseOf(days, i); if (!b) return null;
+  const dS = d.sleepH - b.s, dR = d.rhr - b.r, dH = d.hrv - b.h;
+  const rec = dS*.8 - dR*.35 + dH*.08 - d.wakes*.25;
+  let load = 0;
+  for (let k=1;k<=3;k++){ const p = days[i-k]; if (p) p.runs.forEach(run => { load += run.min/45 * (runInt(run) > .78 ? 1.5 : 1); }); }
+  let st;
+  if (rec < -2) st = "rallentare";
+  else if (load >= 2.5) st = "carico";
+  else if (rec >= .9) st = "riposato";
+  else st = "equilibrio";
+  return {st, dS, dR, dH, wakes:d.wakes, load, rec};
+}
+function sleepWords(days, i){
+  const d = days[i]; if (!d || d.sleepH == null) return null;
+  const b = baseOf(days, i) || {s:7.2, r:52, h:62};
+  const dS = d.sleepH - b.s, dR = d.rhr - b.r;
+  let key = "normale", title = "Una notte come le altre.";
+  if (dS < -1 && d.wakes >= 3){ key = "male"; title = "Notte corta e agitata."; }
+  else if (dS < -.9){ key = "male"; title = "Hai dormito poco."; }
+  else if (d.wakes >= 3){ key = "male"; title = "Una notte agitata."; }
+  else if (dS > .45 && d.wakes <= 1){ key = "bene"; title = "Hai dormito bene."; }
+  const len = dS > .45 ? "più a lungo del solito" : dS < -.7 ? "meno del solito" : "più o meno come al solito";
+  const wk = ["senza svegliarti","con un risveglio","con un paio di risvegli"][d.wakes] || "svegliandoti spesso";
+  const heart = dR <= -2 ? "Il cuore a riposo è rimasto calmo." : dR >= 3 ? "Il cuore a riposo era più alto del solito: capita dopo giorni intensi, con un po' di stress o dopo una cena tardi." : "Il cuore a riposo era nella norma.";
+  return {key, title, line: `Hai dormito ${len}, ${wk}. ${heart}`, short: `hai dormito ${len}`};
+}
+const ADV = {
+  riposato:{
+    energia:["spingi","Oggi puoi osare: ripetute, una salita o un allungo nel finale."],
+    normale:["spingi","Puoi spingere un po', senza strafare. Decidi strada facendo."],
+    stanco:["tranquillo","Il corpo ha recuperato, ma tu ti senti stanco. Fidati di te: oggi corsa facile."]},
+  equilibrio:{
+    energia:["tranquillo","Corsa facile, e se nel finale ti senti bene, allunga."],
+    normale:["tranquillo","Una corsa a ritmo di chiacchiera: devi riuscire a parlare mentre corri."],
+    stanco:["riposa","Il corpo è a posto, ma conta come ti senti: oggi riposa, o fai una camminata."]},
+  carico:{
+    energia:["tranquillo","Ti senti pieno di energia, ma le gambe hanno lavorato tanto. Oggi solo corsa facile: l'energia tienila per domani."],
+    normale:["tranquillo","Corsa breve e leggera, oppure bici o stretching."],
+    stanco:["riposa","Ti senti stanco e le gambe sono cariche: oggi riposa."]},
+  rallentare:{
+    energia:["tranquillo","Ti senti bene, ed è giusto ascoltarti. Ma il corpo sta ancora recuperando: se corri, vai piano e accorcia."],
+    normale:["riposa","Oggi è un giorno per riposare. Una passeggiata va benissimo."],
+    stanco:["riposa","Tu e il corpo dite la stessa cosa: oggi riposa."]}
+};
+function advise(days, feel){
+  const i = days.length - 1;
+  const bs = bodyState(days, i);
+  if (!bs){
+    const m = {energia:["spingi","Ti senti pieno di energia: fidati."], normale:["tranquillo","Corsa a ritmo di chiacchiera."], stanco:["riposa","Ti senti stanco: oggi riposa."]}[feel];
+    return {bs:null, word:m[0], text:m[1], reason:"Stanotte la fascia non ha raccolto dati, quindi il consiglio si basa solo su come ti senti. Va bene così."};
+  }
+  const [word, text] = ADV[bs.st][feel];
+  const sw = sleepWords(days, i);
+  const rec = bs.dH >= 6 ? "il corpo ha recuperato bene" : bs.dH <= -8 ? "il corpo sta ancora recuperando" : "il recupero è nella norma";
+  const load = bs.load >= 2.5 ? " Negli ultimi tre giorni hai corso parecchio." : bs.load < .5 ? " Negli ultimi giorni ti sei riposato." : "";
+  let wk = bs.wakes >= 3 ? ", svegliandoti spesso," : "";
+  return {bs, word, text, reason: cap(sw.short) + wk + " e " + rec + "." + load};
+}
+function runVerdict(run){
+  const v = runInt(run), lvl = bandLevel(v);
+  const n = run.series.length, third = Math.max(1, Math.floor(n/3));
+  const first = avg(run.series.slice(0, third)), last = avg(run.series.slice(-third));
+  const sd = Math.sqrt(avg(run.series.map(x => (x-v)**2)));
+  const shape = last - first > .07 ? "in crescendo" : sd < .035 ? "costante" : "con qualche cambio di ritmo";
+  const diff = run.perceived - lvl;
+  const cmp = diff === 0 ? "Hai sentito giusto: tu e la fascia dite la stessa cosa."
+    : diff > 0 ? "Ti è sembrata più dura di quanto dica il cuore. Succede quando la testa è stanca o fa caldo: conta anche questo."
+    : "Ti è sembrata più facile di quanto dica il cuore: segno che stai bene. Domani però vai piano.";
+  const tomorrow = lvl >= 2 ? "Domani vai tranquillo, o riposa." : "Domani vedi come ti svegli.";
+  return {lvl, band: BAND[lvl], title: `Una corsa ${BAND[lvl]}, ${shape}.`, cmp, tomorrow, agree: diff === 0};
+}
+function weekSummary(days){
+  const last = days.slice(-7);
+  if (!last.length) return null;
+  const runs = last.flatMap(d => d.runs);
+  const lv = runs.map(r => bandLevel(runInt(r)));
+  const easy = lv.filter(l => l === 0).length, mid = lv.filter(l => l === 1).length, hard = lv.filter(l => l >= 2).length;
+  const off = days.length - last.length;
+  const sl = last.map((d,j) => sleepWords(days, off + j)).filter(Boolean);
+  const good = sl.filter(s => s.key === "bene").length, bad = sl.filter(s => s.key === "male").length;
+  const feels = last.map(d => d.feel).filter(Boolean);
+  const en = feels.filter(f => f === "energia").length, st = feels.filter(f => f === "stanco").length;
+  const agree = runs.filter(r => r.perceived != null && r.perceived === bandLevel(runInt(r))).length;
+  const headline = !runs.length ? "Una settimana di riposo." : hard >= 3 ? "Una settimana intensa." : bad >= 3 ? "Una settimana un po' stanca." : "Una settimana in equilibrio.";
+  const parts = [];
+  if (easy) parts.push(NUMF[easy] + " " + (easy === 1 ? "facile" : "facili"));
+  if (mid) parts.push(NUMF[mid] + " " + (mid === 1 ? "media" : "medie"));
+  if (hard) parts.push(NUMF[hard] + " " + (hard === 1 ? "intensa" : "intense"));
+  const PL = {0:["facile","facili"],1:["media","medie"],2:["intensa","intense"]};
+  const only = [easy, mid, hard].filter(Boolean).length === 1 ? (easy ? 0 : mid ? 1 : 2) : null;
+  const runTxt = !runs.length ? "Non hai corso: anche il riposo fa parte dell'allenamento."
+    : runs.length === 1 ? `Hai corso una volta, una corsa ${PL[only][0]}.`
+    : only != null ? `Hai corso ${plural(runs.length,"volta","volte")}, tutte ${PL[only][1]}.`
+    : `Hai corso ${plural(runs.length,"volta","volte")}: ${parts.join(", ").replace(/, ([^,]*)$/, " e $1")}.`;
+  const slTxt = !sl.length ? "" : good >= 4 ? "Hai dormito bene quasi tutte le notti." : bad >= 3 ? "Qualche notte è stata corta o agitata." : "Le notti sono state per lo più regolari.";
+  const feTxt = !feels.length ? "" : en >= 3 ? "Spesso ti sei svegliato pieno di energia." : st >= 3 ? "Diverse mattine ti sei sentito stanco: è un segnale da ascoltare." : "Quasi tutte le mattine ti sei sentito normale.";
+  const agTxt = runs.length < 2 ? "" : agree >= runs.length - 1 ? "Quasi sempre hai sentito le corse come le ha sentite la fascia: ti conosci bene." : "A volte le corse ti sono sembrate diverse da come le ha sentite il corpo: conta anche la testa.";
+  const next = hard >= 3 || bad >= 3 ? "Per la prossima settimana: più corse facili, davvero facili." : "Per la prossima settimana: prova una corsa senza segnali, la Blind Run.";
+  return {headline, text: [runTxt, slTxt, feTxt, agTxt].filter(Boolean).join(" "), next};
+}
+
+/* ---------- stato ---------- */
+const KEY = "feel-proto-v2";
+let S;
+function fresh(){
+  return {v:2, gen: todayKey(), onboarded:false, name:"", paired:false, scenario:"equilibrio", blind:false, tab:"oggi", days: genHistory("equilibrio")};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function T(){ return S.days[S.days.length-1]; }
+function ensureToday(){
+  const k = todayKey();
+  if (!S.days.length || T().key !== k) S.days.push({key:k, sleepH:null, wakes:0, rhr:null, hrv:null, feel:null, woke:null, runs:[]});
+  return T();
+}
+
+let view = "oggi";      // oggi | sonno | corsa | diario | tu | onboarding | run | post
+let OB = {step:0, pair:"idle"};
+let RUN = null, POST = null;
+
+/* ---------- icone (stroke) ---------- */
+const I = {
+  chev:'<svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+  phone:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg>',
+  clock:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  eye:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>',
+  tag:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.5V4.5h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.3"/></svg>',
+  back:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>'
+};
+
+/* ---------- render ---------- */
+function topbar(){
+  const c = S.paired ? "#6E9A80" : "#C7A493";
+  return `<header class="top"><span class="wm">FEEL</span><button class="band" data-a="tab" data-v="tu" style="--c:${c}" aria-label="Stato della fascia: ${S.paired ? "collegata" : "non collegata"}"><i></i>${S.paired ? "Fascia collegata" : "Fascia non collegata"}</button></header>`;
+}
+function tabbar(){
+  return `<nav class="tabs" aria-label="Sezioni">${TABS.map(t => `<button data-a="tab" data-v="${t.k}" ${view === t.k ? 'aria-current="page"' : ""}>${t.l}</button>`).join("")}</nav>`;
+}
+function render(){
+  const m = $("#main");
+  if (view === "onboarding") m.innerHTML = screenOnboarding();
+  else if (view === "run") m.innerHTML = screenRun();
+  else if (view === "post") m.innerHTML = screenPost();
+  else {
+    const fn = {oggi:screenOggi, sonno:screenSonno, corsa:screenCorsa, diario:screenDiario, tu:screenTu}[view] || screenOggi;
+    m.innerHTML = topbar() + `<main class="scroll" id="scroll"><div class="in">${fn()}</div></main>` + tabbar();
+  }
+  afterRender();
+  renderSide();
+  try {
+    if (["oggi","sonno","corsa","diario","tu"].includes(view)) { S.tab = view; if (location.hash !== "#"+view) history.replaceState(null, "", "#"+view); }
+    else if (view === "onboarding" && location.hash !== "#benvenuto") history.replaceState(null, "", "#benvenuto");
+  } catch(e){}
+  save();
+}
+
+/* --- Oggi --- */
+function greet(){ const h = new Date().getHours(); return h < 5 ? "Buonanotte" : h < 13 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera"; }
+function screenOggi(){
+  ensureToday();
+  const t = T(), feel = t.feel;
+  let h = `<p class="eyebrow">${greet()}${S.name ? ", " + esc(S.name) : ""}</p><p class="date">${cap(dateLong(new Date()))}</p>`;
+  if (!feel){
+    h += `<div class="stack" style="margin-top:28px"><h1 class="h1">Come ti senti oggi?</h1><p class="lead">Prima tu. Poi ti raccontiamo cosa ha sentito la fascia stanotte.</p></div>
+      <div class="opts" style="margin-top:22px">${Object.entries(FEELS).map(([k,l]) => `<button class="opt" data-a="checkin" data-v="${k}">${l}</button>`).join("")}</div>
+      <div class="idle"><canvas data-blob="idle" aria-hidden="true"></canvas><p class="small muted">${t.sleepH != null ? "La fascia ha già i dati di stanotte. Te li diciamo a parole, dopo che hai risposto." : "Stanotte la fascia non ha raccolto dati. Nessun problema: conta come ti senti."}</p></div>`;
+    return h;
+  }
+  const a = advise(S.days, feel);
+  const st = a.bs ? STATES[a.bs.st] : null;
+  h += `<div class="hero"><canvas data-blob="${a.bs ? a.bs.st : "idle"}" role="img" aria-label="Il tuo corpo oggi: ${st ? st.label : "nessun dato"}"></canvas>${st ? `<span class="chip state" style="--c:${st.color}">${st.label}</span>` : ""}</div>
+    <div class="stack"><p class="eyebrow">Il consiglio di oggi</p><p class="big">${ADVWORD[a.word]}</p><p class="p">${a.text}</p></div>
+    <div class="card stack" style="margin-top:20px;gap:10px"><p class="eyebrow">Perché</p><p class="p">${a.reason}</p>
+      <div class="row between"><span class="chip">Tu: ${FEELS[feel]}</span><button class="link" data-a="recheck">Cambia risposta</button></div></div>
+    <div class="sec">`;
+  const sw = sleepWords(S.days, S.days.length-1);
+  h += `<button class="card tap" data-a="tab" data-v="sonno"><div><p class="t">Stanotte</p><p class="s">${sw ? sw.title : "Nessun dato per stanotte."}</p></div>${I.chev}</button>`;
+  const ran = t.runs.length;
+  h += `<button class="card tap" data-a="tab" data-v="corsa"><div><p class="t">${ran ? "Hai già corso oggi" : a.word === "riposa" ? "Se vuoi comunque muoverti" : "Pronto a correre?"}</p><p class="s">${ran ? "Trovi la corsa nel diario." : "Niente numeri durante la corsa, solo sensazioni."}</p></div>${I.chev}</button>`;
+  const ws = weekSummary(S.days);
+  if (ws) h += `<button class="card tap" data-a="tab" data-v="diario"><div><p class="t">La tua settimana</p><p class="s">${ws.headline}</p></div>${I.chev}</button>`;
+  return h + `</div>`;
+}
+
+/* --- Sonno --- */
+function sleepSeries(d, seed){
+  const pts = 90, cycles = Math.max(3, Math.round(d.sleepH * 60 / 95));
+  const out = [];
+  const wakeAt = [];
+  for (let w=0; w<d.wakes; w++) wakeAt.push(Math.floor(pts * (0.25 + 0.6*((w*0.37 + seed) % 1))));
+  for (let i=0;i<pts;i++){
+    const x = i/(pts-1);
+    let depth = .5 + .42*Math.sin(x*cycles*Math.PI*2 - Math.PI/2) * (1 - x*.55);
+    depth = .15 + depth*.75;
+    if (i < 3 || i > pts-3) depth = .06;
+    wakeAt.forEach(w => { const dd = Math.abs(i-w); if (dd < 2) depth = Math.min(depth, .05 + dd*.08); });
+    out.push(clamp(depth, .03, .97));
+  }
+  return out;
+}
+function moon(key, label){
+  const f = key === "bene" ? 1 : key === "normale" ? .62 : key === "male" ? .32 : 0;
+  const col = key === "bene" ? "#4E6B5A" : key === "normale" ? "#8FA89A" : "#B85A34";
+  const r = 13 * f;
+  return `<svg viewBox="0 0 30 30" role="img" aria-label="${label}"><circle cx="15" cy="15" r="13" fill="none" stroke="#C9CDC8" stroke-width="1.4"/>${f ? `<circle cx="15" cy="15" r="${r.toFixed(1)}" fill="${col}"/>` : ""}</svg>`;
+}
+function screenSonno(){
+  ensureToday();
+  const i = S.days.length-1, t = T(), sw = sleepWords(S.days, i);
+  let h = `<p class="eyebrow">Stanotte</p>`;
+  if (!sw){
+    return h + `<div class="stack" style="margin-top:14px"><h1 class="h1">Nessun dato per stanotte.</h1><p class="lead">La fascia ricomincia a raccogliere dalla prossima notte. Intanto, conta come ti senti tu.</p></div>`;
+  }
+  h += `<div class="stack" style="margin-top:14px"><h1 class="h1">${sw.title}</h1><p class="p">${sw.line}</p></div>
+    <div class="card" style="margin-top:20px"><canvas class="wave" data-wave="sleep" aria-label="Andamento della notte: più in basso il sonno profondo" role="img"></canvas>
+    <div class="wave-l"><span>Ti sei addormentato</span><span>Sveglia</span></div>
+    <p class="small muted" style="margin:10px 0 0">Più la linea scende, più il sonno era profondo. I picchi verso l'alto sono i risvegli.</p></div>
+    <div class="sec"><p class="eyebrow">Come ti sei svegliato?</p><div class="grid2" style="grid-template-columns:1fr 1fr 1fr">${[["riposato","Riposato"],["cosi","Così così"],["stanco","Stanco"]].map(([k,l]) => `<button class="opt" style="text-align:center;padding:14px 8px" data-a="woke" data-v="${k}" aria-pressed="${t.woke === k}">${l}</button>`).join("")}</div>
+    ${t.woke ? `<p class="small muted">${t.woke === "riposato" ? "Bene così. Il mattino dice più di qualsiasi dato." : t.woke === "cosi" ? "Capita. Una notte non decide la giornata." : sw.key === "bene" ? "La fascia dice che hai dormito bene, ma tu ti senti stanco: conta di più come ti senti tu." : "Ascoltalo: oggi prenditela con calma."}</p>` : ""}</div>
+    <div class="sec"><p class="eyebrow">Le ultime notti</p><div class="card"><div class="nights">`;
+  const off = Math.max(0, S.days.length - 7);
+  for (let j = off; j < S.days.length; j++){
+    const d = S.days[j], w = sleepWords(S.days, j), dt = fromKey(d.key);
+    const lab = (j === S.days.length-1 ? "Stanotte" : cap(GIORNI[dt.getDay()])) + ": " + (w ? w.title : "nessun dato");
+    h += `<div>${moon(w ? w.key : null, esc(lab))}<span>${INIZ[dt.getDay()]}</span></div>`;
+  }
+  h += `</div><div class="row" style="margin-top:14px;gap:14px;justify-content:center">${[["bene","bene"],["normale","normale"],["male","corta o agitata"]].map(([k,l]) => `<span class="row small muted" style="gap:6px">${moon(k,"").replace('role="img"','aria-hidden="true"').replace('<svg','<svg style="width:14px;height:14px"')}${l}</span>`).join("")}</div></div></div>
+    <div class="card" style="margin-top:14px;background:#EEF2EF;border-color:#DCE5DF"><p class="t" style="font-family:var(--display);margin:0 0 6px">Perché niente voto alla notte</p><p class="small" style="margin:0">Quando un'app ti dà un punteggio basso, ti preoccupi. E la preoccupazione peggiora il sonno: si chiama ortosonnia. FEEL ti racconta la notte, non la giudica.</p></div>`;
+  return h;
+}
+
+/* --- Corsa --- */
+function lastRun(){
+  for (let j = S.days.length-1; j >= 0; j--){ const d = S.days[j]; if (d.runs.length) return {day:d, run:d.runs[d.runs.length-1]}; }
+  return null;
+}
+function screenCorsa(){
+  ensureToday();
+  const t = T();
+  const a = t.feel ? advise(S.days, t.feel) : null;
+  let h = `<p class="eyebrow">Corsa</p><div class="stack" style="margin-top:14px">`;
+  h += a ? `<h1 class="h1">Oggi: ${ADVWORD[a.word].toLowerCase()}</h1><p class="lead">${a.text}</p>` : `<h1 class="h1">Corri come ti senti.</h1><p class="lead">Rispondi prima a "come ti senti oggi?" per avere il consiglio del giorno. <button class="link" data-a="tab" data-v="oggi">Rispondi</button></p>`;
+  h += `</div>
+    <div class="card" style="margin-top:20px;display:flex;flex-direction:column;gap:14px">
+      <p class="p">Durante la corsa FEEL non ti mostra passo, tempo né battiti. Se serve, ti dà un segnale con una vibrazione leggera e una frase.</p>
+      <div class="row between" style="flex-wrap:nowrap"><div><p class="t" style="font-family:var(--display);margin:0">Blind Run</p><p class="small muted" style="margin:2px 0 0">Nessun segnale: corri solo a sensazione.</p></div>
+      <button class="switch" role="switch" aria-checked="${S.blind}" aria-label="Blind Run" data-a="blind"></button></div>
+    </div>
+    <div style="margin-top:16px"><button class="btn" data-a="startRun">Inizia a correre</button></div>`;
+  const lr = lastRun();
+  if (lr){
+    const v = runVerdict(lr.run);
+    h += `<div class="sec"><p class="eyebrow">Ultima corsa · ${dayLabel(lr.day.key).toLowerCase()}</p><div class="card stack" style="gap:8px">
+      <p class="t" style="font-family:var(--display);margin:0">${v.title}</p>
+      <p class="small muted" style="margin:0">Per te è stata ${lr.run.perceived != null ? PERC[lr.run.perceived].toLowerCase() : "da raccontare"}. ${v.agree ? "La fascia è d'accordo." : "La fascia l'ha sentita " + v.band + "."}</p>
+      ${lr.run.note ? `<q>${esc(lr.run.note)}</q>` : ""}
+      <div class="row" style="margin-top:4px"><button class="link" data-a="share" data-v="${lr.run.id}">Condividi #FeelNotNumbers</button></div></div></div>`;
+  }
+  h += `<div class="sec"><div class="card" style="background:var(--forest);color:var(--paper);border-color:var(--forest)"><p class="eyebrow" style="color:var(--sand)">Sfida della community</p><p class="t" style="font-family:var(--display);font-size:19px;margin:8px 0 6px">Copri l'orologio.</p><p class="small" style="margin:0;color:#C9D3CC">Una corsa con il polso coperto, poi racconta com'è andata con #FeelNotNumbers. Attiva la Blind Run e prova.</p></div></div>`;
+  return h;
+}
+
+/* --- Corsa in corso --- */
+function phaseWords(m){ return m < 5 ? "Hai appena iniziato" : m < 20 ? "Ci sei dentro" : m < 40 ? "Bella corsa" : m < 70 ? "Corsa lunga" : "Sei là fuori da un bel po'"; }
+function effortWords(v){ return v < .70 ? "Ritmo facile" : v < .78 ? "Ritmo medio" : v < .86 ? "Ritmo sostenuto" : "Al limite"; }
+function screenRun(){
+  const R = RUN;
+  return `<section class="ov dark" aria-label="Corsa in corso"><div class="body" style="gap:10px">
+    <p class="eyebrow">${R.blind ? "Blind Run" : "In corsa"}</p>
+    <h1 class="h1" id="rPhase" style="color:var(--paper)">${phaseWords(R.sim)}</h1>
+    <p class="small" id="rEffort" style="margin:0;color:var(--mist)">${R.blind ? "Solo tu e le tue sensazioni." : effortWords(R.cur)}</p>
+    <div class="runblob"><canvas data-blob="run" aria-hidden="true"></canvas></div>
+    <p class="cue" id="rCue" aria-live="polite">${R.cue}</p>
+    </div>
+    <div class="foot">
+      <p class="simlbl">Simula il runner</p>
+      <div class="sim"><button data-a="effort" data-v="-1">Rallento</button><button data-a="effort" data-v="1">Accelero</button></div>
+      <button class="btn onDark" data-a="endRun" style="margin-top:6px">Termina la corsa</button>
+      <p class="small" style="margin:2px 0 0;text-align:center;color:var(--mist)">Nel prototipo un secondo vale un minuto di corsa.</p>
+    </div></section>`;
+}
+function startRun(){
+  ensureToday();
+  const t = T();
+  const adv = t.feel ? advise(S.days, t.feel).word : "tranquillo";
+  RUN = {sim:0, cur:.56, effort: TARGET[adv], adv, series:[], lastCue:0, cueI:0, blind:S.blind,
+    cue: S.blind ? "Nessun segnale fino alla fine. Ascolta il respiro e i passi." : "Parti piano. Il resto viene da sé."};
+  view = "run"; render();
+  RUN.timer = setInterval(tickRun, 250);
+}
+function tickRun(){
+  const R = RUN; if (!R) return;
+  R.sim += .25;
+  R.cur = clamp(R.cur + (R.effort - R.cur)*.07 + (Math.random()-.5)*.012 + .0005, .45, .98);
+  if (Math.abs(R.sim - Math.round(R.sim)) < .01) R.series.push(+R.cur.toFixed(3));
+  if (!R.blind && R.sim - R.lastCue >= 7){
+    R.lastCue = R.sim;
+    const tgt = TARGET[R.adv], d = R.cur - tgt;
+    let c;
+    if (R.cur > .88){ c = "Il cuore è molto in alto. Se non riesci più a parlare, rallenta."; vibrate([90,70,90]); }
+    else if (d > .07 && R.adv !== "spingi"){ c = "Stai andando più forte del consiglio di oggi. Se ti senti bene va bene, se no rallenta."; vibrate(90); }
+    else if (d < -.08 && R.adv === "spingi" && R.sim > 8){ c = "Stai bene: se ti va, prova ad allungare il passo."; vibrate(60); }
+    else { c = ["Bel ritmo. Ascolta il respiro.","Spalle morbide, passo leggero.","Stai andando bene.","Respiro regolare: continua così."][R.cueI++ % 4]; }
+    setCue(c);
+  }
+  const ph = $("#rPhase"), ef = $("#rEffort");
+  if (ph) ph.textContent = phaseWords(R.sim);
+  if (ef && !R.blind) ef.textContent = effortWords(R.cur);
+}
+function setCue(c){
+  RUN.cue = c;
+  const el = $("#rCue"); if (!el) return;
+  el.style.opacity = 0;
+  setTimeout(() => { el.textContent = c; el.style.opacity = 1; }, 250);
+}
+function endRun(){
+  const R = RUN; if (!R) return;
+  clearInterval(R.timer);
+  let s = R.series.length ? R.series.slice() : [R.cur];
+  while (s.length < 6) s.push(s[s.length-1]);
+  if (s.length > 40){ const k = s.length/40; s = Array.from({length:40}, (_,j) => s[Math.floor(j*k)]); }
+  const run = {id:"r"+Date.now(), min: Math.max(1, Math.round(R.sim)), series:s, perceived:null, chips:{}, note:"", blind:R.blind};
+  RUN = null;
+  POST = {run, step:"ask"};
+  view = "post"; render();
+}
+
+/* --- Dopo la corsa --- */
+const CHIPS = [["gambe","Gambe",["leggere","pesanti"]],["respiro","Respiro",["facile","corto"]],["testa","Testa",["libera","piena"]]];
+function screenPost(){
+  const P = POST, run = P.run;
+  if (P.step === "ask"){
+    return `<section class="ov light" aria-label="Dopo la corsa"><div class="body" style="gap:22px">
+      <div class="dots" aria-hidden="true"><i class="on"></i><i></i></div>
+      <div class="stack"><p class="eyebrow">Dopo la corsa · prima tu</p><h1 class="h1">Com'è andata, secondo te?</h1><p class="lead">La fascia ha registrato la corsa. Te la mostriamo dopo che hai risposto.</p></div>
+      <div class="grid2">${PERC.map((l,k) => `<button class="opt" data-a="perc" data-v="${k}" aria-pressed="${run.perceived === k}">${l}</button>`).join("")}</div>
+      <div class="stack" style="gap:10px"><p class="eyebrow">Come stavano…</p>
+        ${CHIPS.map(([k,l,o]) => `<div class="row between" style="flex-wrap:nowrap"><span class="p">${l}</span><div class="row" style="gap:6px">${o.map(v => `<button class="toggle" data-a="chip" data-v="${k}:${v}" aria-pressed="${run.chips[k] === v}">${v}</button>`).join("")}</div></div>`).join("")}
+      </div>
+      <div><label class="lbl" for="runnote">Vuoi scrivere qualcosa? Resta solo sul tuo telefono.</label><textarea id="runnote" rows="2" placeholder="Es. partito piano, finito bene">${esc(run.note)}</textarea></div>
+      </div>
+      <div class="foot"><button class="btn" data-a="reveal" ${run.perceived == null ? "disabled" : ""}>Vedi cosa ha sentito la fascia</button><button class="btn light" data-a="discard">Non salvare questa corsa</button></div></section>`;
+  }
+  const v = runVerdict(run);
+  return `<section class="ov light" aria-label="Cosa ha sentito la fascia"><div class="body" style="gap:18px">
+    <div class="dots" aria-hidden="true"><i></i><i class="on"></i></div>
+    <div class="stack"><p class="eyebrow">La fascia ha sentito</p><h1 class="h1">${v.title}</h1></div>
+    <div class="card"><canvas class="wave" data-wave="run" role="img" aria-label="Andamento dell'intensità della corsa"></canvas><div class="wave-l"><span>Partenza</span><span>Arrivo</span></div></div>
+    <div class="compare"><div class="card"><div class="k">Per te</div><div class="v">${PERC[run.perceived].toLowerCase()}</div></div><div class="card"><div class="k">Per la fascia</div><div class="v">${v.band}</div></div></div>
+    <p class="p">${v.cmp}</p>
+    <p class="p muted">${v.tomorrow}</p>
+    </div>
+    <div class="foot"><button class="btn" data-a="saveRun">Salva nel diario</button><button class="btn line" data-a="saveShare">Salva e condividi #FeelNotNumbers</button></div></section>`;
+}
+
+/* --- Diario --- */
+function screenDiario(){
+  ensureToday();
+  const ws = weekSummary(S.days.filter(d => d.sleepH != null || d.runs.length || d.feel));
+  let h = `<p class="eyebrow">La tua settimana</p>`;
+  if (!ws || (S.days.length === 1 && !T().runs.length && !T().feel)){
+    return h + `<div class="stack" style="margin-top:14px"><h1 class="h1">Il diario è vuoto.</h1><p class="lead">Ogni mattina e dopo ogni corsa, qui si scrive da solo il racconto della tua settimana.</p></div>`;
+  }
+  h += `<div class="stack" style="margin-top:14px"><h1 class="h1">${ws.headline}</h1><p class="p">${ws.text}</p></div>
+    <div class="card" style="margin-top:18px"><div class="week">`;
+  const off = Math.max(0, S.days.length - 7);
+  for (let j = off; j < S.days.length; j++){
+    const d = S.days[j], bs = bodyState(S.days, j), dt = fromKey(d.key);
+    const lab = cap(GIORNI[dt.getDay()]) + ": " + (bs ? STATES[bs.st].label : "nessun dato") + (d.runs.length ? ", corsa" : "");
+    h += `<div class="d ${j === S.days.length-1 ? "today" : ""}" role="img" aria-label="${lab}"><span>${INIZ[dt.getDay()]}</span><span class="c" style="--c:${bs ? STATES[bs.st].color : "#DADCD7"}"></span><span class="r ${d.runs.length ? "" : "no"}"></span></div>`;
+  }
+  h += `</div><div class="row" style="margin-top:14px;gap:12px;justify-content:center">${Object.values(STATES).map(s => `<span class="row small muted" style="gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block"></i>${s.label}</span>`).join("")}</div></div>
+    <div class="card" style="margin-top:12px;background:#EEF2EF;border-color:#DCE5DF"><p class="small" style="margin:0">${ws.next}</p></div>
+    <div class="sec"><p class="eyebrow">Giorno per giorno</p><div class="card">`;
+  for (let j = S.days.length-1; j >= off; j--){
+    const d = S.days[j], bs = bodyState(S.days, j), sw = sleepWords(S.days, j);
+    const lines = [];
+    if (d.feel) lines.push("Al mattino ti sentivi " + FEELS_LOW[d.feel] + ".");
+    if (sw) lines.push("Notte: " + sw.title.toLowerCase().replace(/\.$/, "") + ".");
+    let runs = "";
+    d.runs.forEach(r => {
+      const v = runVerdict(r);
+      runs += `<p class="small" style="margin:4px 0 0">Corsa ${r.perceived != null ? PERC[r.perceived].toLowerCase() : ""}${r.blind ? " (Blind Run)" : ""}. La fascia: ${v.band}.</p>${r.note ? `<q>${esc(r.note)}</q>` : ""}`;
+    });
+    if (!lines.length && !runs) continue;
+    h += `<div class="entry"><div class="day" style="--c:${bs ? STATES[bs.st].color : "#DADCD7"}"><i></i>${dayLabel(d.key)}</div><p class="small muted" style="margin:0">${lines.join(" ")}</p>${runs}</div>`;
+  }
+  return h + `</div></div>`;
+}
+
+/* --- Tu --- */
+function screenTu(){
+  const days = S.days.filter(d => d.sleepH != null || d.runs.length);
+  const oldest = days.length ? Math.round((startDay(new Date()) - fromKey(days[0].key))/864e5) : null;
+  let h = `<p class="eyebrow">Tu</p><div class="stack" style="margin-top:14px"><h1 class="h1">${S.name ? esc(S.name) : "Il tuo spazio"}</h1></div>
+    <div class="card" style="margin-top:18px"><label class="lbl" for="name">Come ti chiami?</label><input type="text" id="name" value="${esc(S.name)}" placeholder="Il tuo nome" autocomplete="given-name"></div>
+    <div class="sec"><p class="eyebrow">La tua fascia</p><div class="card row" style="flex-wrap:nowrap;gap:14px"><canvas class="pebble" data-blob="pebble" aria-hidden="true"></canvas>
+      <div style="flex:1"><p class="t" style="font-family:var(--display);margin:0">${S.paired ? "FEEL collegata" : "Fascia non collegata"}</p><p class="small muted" style="margin:2px 0 0">${S.paired ? "Batteria carica per tutta la settimana. Si sincronizza da sola quando sei vicino al telefono." : "Collegala per avere i consigli basati sul corpo."}</p></div>
+      <button class="toggle" data-a="${S.paired ? "unpair" : "pair"}">${S.paired ? "Scollega" : "Collega"}</button></div></div>
+    <div class="sec"><p class="eyebrow">I tuoi dati</p><div class="card"><div class="list">
+      <div class="li">${I.phone}<div><p class="p" style="margin:0">Restano sul tuo telefono.</p><p class="small muted" style="margin:2px 0 0">Nessun server, nessun account obbligatorio.</p></div></div>
+      <div class="li">${I.clock}<div><p class="p" style="margin:0">Si cancellano da soli dopo 28 giorni.</p><p class="small muted" style="margin:2px 0 0">${oldest == null ? "Al momento non c'è nessun dato." : oldest >= 27 ? "Il giorno più vecchio sparisce domani." : "Il giorno più vecchio sparisce tra " + plural(28 - oldest, "giorno", "giorni") + "."}</p></div></div>
+      <div class="li">${I.eye}<div><p class="p" style="margin:0">I numeri li vedi solo se li cerchi.</p><p class="small muted" style="margin:2px 0 0">Nell'app ci sono solo parole.</p></div></div>
+    </div><div class="stack" style="gap:10px;margin-top:14px"><button class="btn light" data-a="rawGate">Cerca i tuoi dati</button><button class="btn danger" data-a="wipeAsk">Cancella tutto ora</button></div></div></div>
+    <div class="sec"><div class="card row" style="flex-wrap:nowrap;gap:14px;align-items:flex-start"><span style="color:var(--sage)">${I.tag}</span><div><p class="t" style="font-family:var(--display);margin:0">Nessun abbonamento.</p><p class="small muted" style="margin:2px 0 0">FEEL si compra una volta ed è tua. Tutte le funzioni, per sempre, senza canone mensile.</p></div></div></div>
+    <div class="sec"><p class="eyebrow">Demo</p><div class="card stack" style="gap:12px"><p class="small muted" style="margin:0">Scegli cosa ha sentito la fascia stanotte per vedere come cambiano i consigli.</p>
+      <div class="row" style="gap:8px">${Object.entries(STATES).map(([k,s]) => `<button class="toggle" data-a="scenario" data-v="${k}" aria-pressed="${S.scenario === k}">${s.label}</button>`).join("")}</div>
+      <div class="row" style="gap:16px"><button class="link" data-a="onboard">Rivedi il benvenuto</button><button class="link" data-a="reset">Ricomincia la demo</button></div></div></div>
+    <p class="small muted" style="text-align:center;margin:26px 0 0">FEEL · prototipo dell'app<br>Project work di Sociologia dei Media Digitali</p>`;
+  return h;
+}
+
+/* --- Onboarding --- */
+function screenOnboarding(){
+  const s = OB.step;
+  const dots = `<div class="dots" aria-hidden="true">${[0,1,2,3].map(k => `<i class="${k === s ? "on" : ""}"></i>`).join("")}</div>`;
+  if (s === 0) return `<section class="ov dark ob" aria-label="Benvenuto"><div class="body" style="justify-content:flex-end;gap:16px">
+      <div class="runblob" style="min-height:300px"><canvas data-blob="hello" aria-hidden="true"></canvas></div>
+      <p class="big" style="color:var(--paper)">FEEL</p><p style="font-family:var(--display);font-weight:300;font-size:22px;color:var(--mist);margin:0">Trust how you feel</p>
+      <p class="small" style="color:#C9D3CC;margin:6px 0 0">La fascia che registra il tuo corpo e ti parla a parole. Niente numeri, niente punteggi.</p></div>
+      <div class="foot">${dots}<button class="btn onDark" data-a="ob" data-v="1">Iniziamo</button></div></section>`;
+  if (s === 1) return `<section class="ov dark ob" aria-label="Tre promesse"><div class="body" style="gap:26px">
+      <div class="stack"><p class="eyebrow">Tre promesse</p><h1 class="h1" style="color:var(--paper)">Registra tutto. Non ti dà voti.</h1></div>
+      <div class="promise"><b>01</b><div><p class="t">Nessun punteggio</p><p class="s">Solo indicazioni a parole: spingi, vai tranquillo, riposa. Sempre con il motivo.</p></div></div>
+      <div class="promise"><b>02</b><div><p class="t">I dati restano tuoi</p><p class="s">Sul tuo telefono, cancellati dopo 28 giorni, consultabili solo se li cerchi.</p></div></div>
+      <div class="promise"><b>03</b><div><p class="t">Nessun abbonamento</p><p class="s">Si compra una volta. Niente canone ogni mese.</p></div></div>
+      </div><div class="foot">${dots}<button class="btn onDark" data-a="ob" data-v="2">Ho capito</button></div></section>`;
+  if (s === 2){
+    const st = OB.pair;
+    const title = st === "idle" ? "Collega la tua fascia" : st === "searching" ? "Sto cercando la fascia…" : st === "found" ? "Trovata: FEEL" : st === "connecting" ? "Collegamento…" : "Collegata.";
+    const sub = st === "idle" ? "Infila la fascia al polso e avvicinala al telefono." : st === "searching" ? "Tienila vicina al telefono." : st === "found" ? "È la tua? Toccala due volte per confermare, oppure premi Collega." : st === "connecting" ? "Un attimo." : "Da stanotte la fascia ascolta il tuo corpo. Tu non devi fare niente.";
+    const btn = st === "idle" ? `<button class="btn onDark" data-a="pairStart">Cerca la fascia</button>` : st === "found" ? `<button class="btn onDark" data-a="pairOk">Collega</button>` : st === "done" ? `<button class="btn onDark" data-a="ob" data-v="3">Avanti</button>` : `<button class="btn onDark" disabled>Attendi</button>`;
+    return `<section class="ov dark ob" aria-label="Collega la fascia"><div class="body"><p class="eyebrow">La fascia</p>
+      <div class="pair"><canvas data-blob="${st === "done" ? "pebble" : "pair"}" aria-hidden="true"></canvas><h1 class="h1" style="color:var(--paper)" aria-live="polite">${title}</h1><p class="small" style="color:#C9D3CC;margin:0;max-width:280px">${sub}</p></div></div>
+      <div class="foot">${dots}${btn}${st === "idle" ? `<button class="btn" style="background:transparent;color:var(--mist)" data-a="ob" data-v="3">Lo faccio dopo</button>` : ""}</div></section>`;
+  }
+  return `<section class="ov dark ob" aria-label="Il tuo nome"><div class="body" style="gap:18px"><p class="eyebrow">Ultima cosa</p><h1 class="h1" style="color:var(--paper)">Come ti chiami?</h1>
+      <p class="small" style="color:#C9D3CC;margin:0">Solo per salutarti al mattino. Resta sul telefono.</p>
+      <input type="text" id="obname" value="${esc(S.name)}" placeholder="Il tuo nome" autocomplete="given-name" style="background:var(--forest-2);border-color:#3F5047;color:var(--paper)"></div>
+      <div class="foot">${dots}<button class="btn onDark" data-a="obDone">Inizia</button></div></section>`;
+}
+
+/* ---------- sheets, toast ---------- */
+function sheet(html, key){
+  $("#layer").innerHTML = `<div class="backdrop" data-a="closeSheet" data-self="1"><div class="sheet" role="dialog" aria-modal="true">${'<div class="grab" aria-hidden="true"></div>'}${html}</div></div>`;
+  SHEETKEY = key || null; afterRender(); renderSide();
+  const f = $("#layer .sheet button, #layer .sheet input"); if (f) f.focus({preventScroll:true});
+}
+let SHEETKEY = null;
+function closeSheet(){ $("#layer").innerHTML = ""; SHEETKEY = null; renderSide(); }
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2200); }
+
+function rawSheet(){
+  const rows = S.days.filter(d => d.sleepH != null || d.runs.length).slice().reverse().map(d => {
+    const age = Math.round((startDay(new Date()) - fromKey(d.key))/864e5);
+    const hh = d.sleepH != null ? Math.floor(d.sleepH) + ":" + String(Math.round((d.sleepH % 1)*60)).padStart(2,"0") : "–";
+    const rm = d.runs.reduce((a,r) => a + r.min, 0);
+    const dt = fromKey(d.key);
+    return `<tr><td>${dt.getDate()} ${MESI[dt.getMonth()].slice(0,3)}</td><td>${hh}</td><td>${d.sleepH != null ? d.wakes : "–"}</td><td>${d.rhr ?? "–"}</td><td>${d.hrv ?? "–"}</td><td>${rm || "–"}</td><td>${28 - age} gg</td></tr>`;
+  }).join("");
+  sheet(`<div class="stack" style="gap:6px"><p class="eyebrow">I tuoi dati grezzi</p><h2 class="h1" style="font-size:24px">Ecco i numeri.</h2><p class="small muted" style="margin:0">Sono solo un pezzo di come stai. L'ultima colonna dice tra quanto ogni giorno si cancella.</p></div>
+    ${rows ? `<div class="tbl-wrap" style="max-height:340px;overflow:auto"><table><thead><tr><th>Giorno</th><th>Sonno</th><th>Risvegli</th><th>Battito a riposo</th><th>HRV ms</th><th>Corsa min</th><th>Si cancella</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="p">Non c'è nessun dato salvato.</p>`}
+    <button class="btn" data-a="closeSheet">Chiudi e torna alle parole</button>`, "data");
+}
+function shareSheet(run){
+  const v = runVerdict(run);
+  const chips = Object.entries(run.chips).map(([k,val]) => ({gambe:"gambe",respiro:"respiro",testa:"testa"}[k] + " " + val)).join(", ");
+  const feelTxt = run.perceived != null ? PERC[run.perceived].toLowerCase() : "da raccontare";
+  const quote = `Oggi ho corso senza guardare un numero. Com'è andata? ${cap(feelTxt)}.`;
+  const text = quote + (chips ? " " + cap(chips) + "." : "") + (run.note ? " " + run.note : "") + " #FeelNotNumbers";
+  sheet(`<div class="stack" style="gap:6px"><p class="eyebrow">Condividi</p><h2 class="h1" style="font-size:24px">La tua corsa, a parole.</h2></div>
+    <div class="share"><canvas data-blob="share" aria-hidden="true"></canvas><span class="wm">FEEL</span><p class="q">${esc(quote)}</p>${chips ? `<p class="small" style="margin:0;color:#C9D3CC">${esc(cap(chips))}.</p>` : ""}${run.note ? `<p class="small" style="margin:0;color:#C9D3CC;font-style:italic">“${esc(run.note)}”</p>` : ""}<span class="tg">#FeelNotNumbers · Trust how you feel</span></div>
+    <textarea id="shareText" rows="3" readonly aria-label="Testo da condividere">${esc(text)}</textarea>
+    <button class="btn" data-a="copyShare">Copia il testo</button><button class="btn light" data-a="closeSheet">Chiudi</button>`, "share");
+}
+
+/* ---------- azioni ---------- */
+function findRun(id){ for (const d of S.days) for (const r of d.runs) if (r.id === id) return r; return null; }
+const A = {
+  tab(v){ closeSheet(); if (RUN){ clearInterval(RUN.timer); RUN = null; } POST = null; view = v; render(); const sc = $("#scroll"); if (sc) sc.scrollTop = 0; },
+  checkin(v){ ensureToday().feel = v; render(); vibrate(20); },
+  recheck(){ T().feel = null; render(); },
+  woke(v){ T().woke = v; render(); },
+  blind(){ S.blind = !S.blind; render(); toast(S.blind ? "Blind Run attiva: nessun segnale" : "Segnali leggeri attivi"); },
+  startRun(){ startRun(); },
+  effort(v){ if (!RUN) return; RUN.effort = clamp(RUN.effort + (+v)*.06, .55, .95); if (!RUN.blind) setCue(+v > 0 ? "Acceleri. Ascolta come risponde il respiro." : "Rallenti. Lascia che il respiro si calmi."); RUN.lastCue = RUN.sim; },
+  endRun(){ endRun(); },
+  perc(v){ POST.run.perceived = +v; keepNote(); render(); },
+  chip(v){ const [k,val] = v.split(":"); POST.run.chips[k] = POST.run.chips[k] === val ? undefined : val; if (!POST.run.chips[k]) delete POST.run.chips[k]; keepNote(); render(); },
+  reveal(){ keepNote(); if (POST.run.perceived == null) return; POST.step = "band"; render(); vibrate(30); },
+  discard(){ POST = null; view = "corsa"; render(); toast("Corsa non salvata"); },
+  saveRun(){ const r = POST.run; ensureToday().runs.push(r); POST = null; view = "diario"; render(); toast("Corsa salvata nel diario"); },
+  saveShare(){ const r = POST.run; ensureToday().runs.push(r); POST = null; view = "corsa"; render(); shareSheet(r); },
+  share(id){ const r = findRun(id); if (r) shareSheet(r); },
+  copyShare(){
+    const ta = $("#shareText");
+    const done = () => toast("Testo copiato");
+    try { navigator.clipboard.writeText(ta.value).then(done, () => { ta.select(); toast("Seleziona e copia il testo"); }); }
+    catch(e){ ta.select(); toast("Seleziona e copia il testo"); }
+  },
+  closeSheet(v, el, e){ if (el.dataset.self && e.target !== el) return; closeSheet(); },
+  rawGate(){
+    sheet(`<div class="stack"><p class="eyebrow">Prima di guardare</p><h2 class="h1" style="font-size:24px">Vuoi vedere i numeri?</h2><p class="p">Va bene, sono tuoi. Ricorda solo che un numero non sa come ti senti. Se stamattina stai bene, stai bene.</p></div>
+      <button class="btn" data-a="rawShow">Sì, mostrami i dati</button><button class="btn light" data-a="closeSheet">No, mi bastano le parole</button>`, "data");
+  },
+  rawShow(){ rawSheet(); },
+  wipeAsk(){
+    sheet(`<div class="stack"><p class="eyebrow">Cancella tutto</p><h2 class="h1" style="font-size:24px">Cancellare tutti i dati?</h2><p class="p">Sonno, corse, note e risposte spariscono da questo telefono. Non si possono recuperare. La fascia ricomincia a raccogliere da stanotte.</p></div>
+      <button class="btn" style="background:var(--clay)" data-a="wipe">Cancella tutto</button><button class="btn light" data-a="closeSheet">Annulla</button>`);
+  },
+  wipe(){ S.days = []; ensureToday(); closeSheet(); render(); toast("Tutti i dati sono stati cancellati"); },
+  pair(){ S.paired = true; render(); toast("Fascia collegata"); },
+  unpair(){ S.paired = false; render(); toast("Fascia scollegata"); },
+  scenario(v){
+    S.scenario = v; const keepRuns = S.days.length ? T().runs : [];
+    S.days = genHistory(v); T().runs = keepRuns.filter(r => !r.id.startsWith("r0"));
+    closeSheet(); if (["onboarding","run","post"].includes(view)) { if (RUN) clearInterval(RUN.timer); RUN = null; POST = null; view = "oggi"; }
+    render(); toast("Stanotte: " + STATES[v].label.toLowerCase());
+  },
+  reset(){ if (RUN) clearInterval(RUN.timer); RUN = null; POST = null; S = fresh(); OB = {step:0, pair:"idle"}; closeSheet(); view = "onboarding"; render(); },
+  onboard(){ OB = {step:0, pair: S.paired ? "done" : "idle"}; closeSheet(); view = "onboarding"; render(); },
+  ob(v){ OB.step = +v; render(); },
+  pairStart(){ OB.pair = "searching"; render(); setTimeout(() => { if (OB.pair === "searching"){ OB.pair = "found"; render(); vibrate(40); } }, 1700); },
+  pairOk(){ OB.pair = "connecting"; render(); setTimeout(() => { OB.pair = "done"; S.paired = true; render(); vibrate([30,40,30]); }, 1100); },
+  obDone(){ const n = $("#obname"); if (n) S.name = n.value.trim().slice(0,30); S.onboarded = true; view = "oggi"; render(); },
+  nav(v){ if (v === "onboarding") return A.onboard(); A.tab(v); }
+};
+function keepNote(){ const n = $("#runnote"); if (n && POST) POST.run.note = n.value.slice(0,200); }
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-a]"); if (!el || el.disabled) return;
+  const fn = A[el.dataset.a]; if (fn) fn(el.dataset.v, el, e);
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "name"){ S.name = e.target.value.trim().slice(0,30); save(); }
+  if (e.target.id === "runnote" && POST){ POST.run.note = e.target.value.slice(0,200); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && $("#layer").innerHTML) closeSheet();
+  if (e.key === "Enter" && e.target.id === "obname") A.obDone();
+});
+
+/* ---------- pannello laterale ---------- */
+function renderSide(){
+  const scn = $("#scn"), nav = $("#nav"), note = $("#note");
+  if (!scn) return;
+  scn.innerHTML = Object.entries(STATES).map(([k,s]) => `<button class="sbtn" data-a="scenario" data-v="${k}" aria-pressed="${S.scenario === k}" style="--c:${s.color}"><span class="dot"></span>${s.label}</button>`).join("");
+  const cur = view === "onboarding" ? "onboarding" : view;
+  nav.innerHTML = [["onboarding","Benvenuto"], ...TABS.map(t => [t.k, t.l])].map(([k,l]) => `<button class="sbtn" data-a="nav" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`).join("");
+  const n = NOTES[SHEETKEY] || NOTES[view] || NOTES.oggi;
+  note.innerHTML = `<h2 style="margin:0">Concetto del corso</h2><div class="concept">${n.c}</div><div class="say">${n.s}</div>`;
+}
+
+/* ---------- canvas: la forma che respira e le onde ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function hex2rgb(h){ const n = parseInt(h.slice(1),16); return [n>>16&255, n>>8&255, n&255]; }
+function mix(h, w, a){ const c = hex2rgb(h), d = hex2rgb(w); return `rgb(${c.map((v,i) => Math.round(v + (d[i]-v)*a)).join(",")})`; }
+function sizeCanvas(cv){
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); return {ctx, w, h};
+}
+function blobOpts(kind){
+  if (STATES[kind]) return {color:STATES[kind].color, energy:STATES[kind].energy, scale:.34};
+  switch (kind){
+    case "idle": return {color:IDLE_COLOR, energy:.3, scale:.36};
+    case "pebble": return {color:"#D9CFBD", energy:.15, scale:.38, pebble:true};
+    case "pair": return {color:"#D9CFBD", energy:.8, scale:.3, pebble:true, rings:true};
+    case "hello": return {color:"#4E6B5A", energy:.4, scale:.33, glow:true};
+    case "share": return {color:"#8FA89A", energy:.35, scale:.4};
+    case "run": {
+      const v = RUN ? RUN.cur : .6;
+      const c = v < .70 ? "#8FA89A" : v < .78 ? "#4E6B5A" : v < .86 ? "#BFA57A" : "#B85A34";
+      return {color:c, energy:.5, scale:.3, beat: RUN ? 0.9 + v*2.2 : 1.4, glow:true};
+    }
+  }
+  return {color:IDLE_COLOR, energy:.3, scale:.35};
+}
+function drawBlob(cv, t){
+  const s = sizeCanvas(cv); if (!s) return;
+  const {ctx, w, h} = s, o = blobOpts(cv.dataset.blob);
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2, R0 = Math.min(w,h)*o.scale;
+  const sp = .00045 + o.energy*.0009;
+  let breath = 1 + .035*Math.sin(t*.0011*(1 + o.energy));
+  if (o.beat){ const ph = (t*.001*o.beat) % 1; breath = 1 + .06*Math.exp(-ph*9) + .025*Math.exp(-Math.max(0,ph-.18)*12)*(ph > .18 ? 1 : 0); }
+  if (o.rings){
+    for (let k=0;k<3;k++){
+      const ph = ((t*.0005) + k/3) % 1;
+      ctx.beginPath(); ctx.arc(cx, cy, R0*(1.1 + ph*1.6), 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(201,214,205,${(1-ph)*.45})`; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+  if (o.glow){
+    const g = ctx.createRadialGradient(cx, cy, R0*.4, cx, cy, R0*2.2);
+    g.addColorStop(0, mix(o.color, "#ffffff", .1).replace("rgb","rgba").replace(")",",.35)")); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  }
+  // shadow
+  if (!o.glow){
+    ctx.save(); ctx.beginPath(); ctx.ellipse(cx, cy + R0*1.12, R0*.85, R0*.14, 0, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(27,38,32,.08)"; ctx.filter = "blur(6px)"; ctx.fill(); ctx.restore();
+  }
+  const N = 9, pts = [];
+  const sq = o.pebble ? .82 : 1;
+  for (let i=0;i<N;i++){
+    const a = i/N*Math.PI*2;
+    const wob = o.pebble ? .025 : .07;
+    const r = R0*breath*(1 + wob*Math.sin(t*sp*1.7 + i*1.9) + wob*.6*Math.sin(t*sp*2.9 + i*3.1));
+    pts.push([cx + Math.cos(a)*r, cy + Math.sin(a)*r*sq]);
+  }
+  ctx.beginPath();
+  for (let i=0;i<N;i++){
+    const p = pts[i], q = pts[(i+1)%N];
+    const mx = (p[0]+q[0])/2, my = (p[1]+q[1])/2;
+    if (i === 0){ const z = pts[N-1]; ctx.moveTo((z[0]+p[0])/2, (z[1]+p[1])/2); }
+    ctx.quadraticCurveTo(p[0], p[1], mx, my);
+  }
+  ctx.closePath();
+  const g = ctx.createRadialGradient(cx - R0*.35, cy - R0*.4, R0*.1, cx, cy, R0*1.25);
+  g.addColorStop(0, mix(o.color, "#ffffff", .38)); g.addColorStop(.55, o.color); g.addColorStop(1, mix(o.color, "#1D2923", .22));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx - R0*.32, cy - R0*.38*sq, R0*.32, R0*.16, -.5, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fill();
+  if (o.pebble){ ctx.fillStyle = "rgba(60,58,50,.55)"; ctx.font = `500 ${Math.max(7, R0*.18)}px Sora, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.letterSpacing = "2px"; ctx.fillText("FEEL", cx, cy + R0*.38*sq); }
+}
+function drawWave(cv){
+  const s = sizeCanvas(cv); if (!s) return;
+  const {ctx, w, h} = s; ctx.clearRect(0,0,w,h);
+  let vals, color, invert = false;
+  if (cv.dataset.wave === "sleep"){ const d = T(); vals = sleepSeries(d, (d.hrv || 1) * .013 % 1); color = "#4E6B5A"; invert = true; }
+  else { const r = POST && POST.run; if (!r) return; vals = r.series; color = bandLevel(runInt(r)) >= 2 ? "#BFA57A" : "#4E6B5A"; }
+  const lo = invert ? 0 : Math.min(.5, ...vals) - .04, hi = invert ? 1 : Math.max(.92, ...vals) + .02;
+  const pad = 6;
+  const X = i => pad + i/(vals.length-1)*(w - pad*2);
+  const Y = v => invert ? pad + v*(h - pad*2) : h - pad - (v - lo)/(hi - lo)*(h - pad*2);
+  // faint guides, no numbers
+  ctx.strokeStyle = "#ECECE7"; ctx.lineWidth = 1;
+  [.25,.5,.75].forEach(f => { ctx.beginPath(); ctx.moveTo(0, h*f); ctx.lineTo(w, h*f); ctx.stroke(); });
+  ctx.beginPath(); ctx.moveTo(X(0), Y(vals[0]));
+  for (let i=1;i<vals.length;i++){ const xm = (X(i-1)+X(i))/2; ctx.bezierCurveTo(xm, Y(vals[i-1]), xm, Y(vals[i]), X(i), Y(vals[i])); }
+  ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.lineTo(X(vals.length-1), invert ? 0 : h); ctx.lineTo(X(0), invert ? 0 : h); ctx.closePath();
+  const g = ctx.createLinearGradient(0, invert ? 0 : h, 0, invert ? h : 0);
+  g.addColorStop(0, "rgba(78,107,90,0)"); g.addColorStop(1, invert ? "rgba(78,107,90,.16)" : "rgba(78,107,90,.18)");
+  ctx.fillStyle = g; ctx.fill();
+  const li = vals.length-1; ctx.beginPath(); ctx.arc(X(li), Y(vals[li]), 3.5, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+}
+let blobs = [];
+function afterRender(){
+  blobs = Array.from(document.querySelectorAll("canvas[data-blob]"));
+  document.querySelectorAll("canvas[data-wave]").forEach(drawWave);
+  if (reduce) blobs.forEach(b => drawBlob(b, 0));
+}
+function loop(t){ if (!reduce) blobs.forEach(b => { if (b.isConnected) drawBlob(b, t); }); requestAnimationFrame(loop); }
+
+/* ---------- scala del telefono ---------- */
+function fit(){
+  const wrap = $("#wrap");
+  if (innerWidth <= 860){ wrap.style.removeProperty("--k"); return; }
+  const k = Math.min(1, (innerHeight - 40) / 868, (innerWidth - 560) / 414);
+  wrap.style.setProperty("--k", Math.max(.55, k).toFixed(3));
+}
+addEventListener("resize", () => { fit(); document.querySelectorAll("canvas[data-wave]").forEach(drawWave); });
+
+/* ---------- avvio ---------- */
+function fromHash(){
+  const h = location.hash.slice(1);
+  if (h === "benvenuto") return "onboarding";
+  return TABS.some(t => t.k === h) ? h : null;
+}
+addEventListener("hashchange", () => { const v = fromHash(); if (v && v !== view && !RUN && !POST){ if (v === "onboarding") A.onboard(); else A.tab(v); } });
+function start(){
+  const saved = load();
+  if (saved && saved.v === 2){
+    S = saved;
+    if (S.gen !== todayKey()){ const name = S.name, ob = S.onboarded, paired = S.paired, blind = S.blind; S = fresh(); Object.assign(S, {name, onboarded:ob, paired, blind}); }
+  } else S = fresh();
+  try { window.claude?.hot?.snapshot(() => S); } catch(e){}
+  const h = fromHash();
+  view = !S.onboarded ? (h && h !== "onboarding" ? h : "onboarding") : (h || S.tab || "oggi");
+  if (view !== "onboarding" && !S.onboarded){ S.onboarded = true; S.paired = true; }
+  fit(); render(); requestAnimationFrame(loop);
+  if (document.fonts) document.fonts.ready.then(() => { document.querySelectorAll("canvas[data-wave]").forEach(drawWave); });
+}
+start();
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+</script>
+</body>
+</html>
